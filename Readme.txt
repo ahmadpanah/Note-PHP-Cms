@@ -13,9 +13,8 @@ Automatically add a timestamp, only the first day of the record date, other reco
 Automatically archived by month, to prevent the log file size is too large 
 
 -------- 
-Document Composition 
+Document
 -------- 
-A total of two documents: 
 index.php 
 style.css 
 
