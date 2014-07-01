@@ -18,56 +18,76 @@
 </div>
 
 <?php
+// Set default time zone to tehran.
+date_default_timezone_set("Asia/Tehran"); 
+
 $filename = "./posts.txt";
-file_exists($filename) or file_put_contents($filename, "\xEF\xBB\xBF<div class=post><div class=time>".date("M d\r\nH:i\r\nD")."</div><div class=msg>-- Start --</div></div>");
+
+// Add a unique deli. for saving format
+$deli = "`";
+
+file_exists($filename) or file_put_contents($filename, time().$deli."--Start--");
 $original_posts = file_get_contents($filename);
-if (isset($_POST["msg"])) {
-    $msg = $_POST["msg"];
+
+if (isset($_POST["msg"])) 
+{
+    // Remove Spaces.
+    $msg = trim($_POST["msg"]);
     ($msg=='') and die('Empty message.');
+    
     $msg = preg_replace("/\bhttp:\/\/(\w+)+.*\b/",'<a href="$0">$0</a>',$msg);
-    $post_month= $matches[1];
-    $post_day= $matches[2];
-    $current_month = date("M");
-    $current_day = date("d");
-    if($current_month===$post_month){
-        if($current_day===$post_day){
-            $time = date("H:i");
-        }
-        else{
-            $time = date("M d\r\nH:i\r\nD");
-        }
-        $posts = "<div class=post><div class=time>$time</div><div class=msg>$msg</div></div>" . $original_posts;
-        echo nl2br($posts);
-        file_put_contents($filename, $posts);
+    
+    $now = time();
+    
+    $fpPosts = fopen('./posts.txt', 'r');
+    $fpTemp = fopen('./temp', 'w');
+    
+    fwrite($fpTemp, $now.$deli.$msg."\r\n");
+    while($sr = fgets($fpPosts))
+    {
+        fputs($fpTemp, $sr);
     }
-    else{
-        $time = date("M d\r\nH:i\r\nD");
-        $posts = "<div class=post><div class=time>$time</div><div class=msg>$msg</div></div>";
-        echo nl2br($posts);
-        if($post_month==='Dec' && $current_month==='Jan'){
-            $newfile = "posts_".strval(intval(date("Y"))-1).'_'.$post_month.'.txt';
-        }
-        else{
-            $newfile = "posts_".date("Y").'_'.$post_month.'.txt';
-        }
-        if (rename($filename, $newfile)){
-            file_put_contents($filename, "\xEF\xBB\xBF".$posts);
-        }
-        else{
-            die('Unable to rename $filename to $newfile');
-        }
-    }    
-    redirect('index.php');
-}
-else{
-    echo nl2br($original_posts);
+    
+    fclose($fpPosts);
+    fclose($fpTemp);
+    
+    unlink('./posts.txt');
+    rename('temp', 'posts.txt');
 }
 
-function redirect($url, $statusCode = 303)
+// Open posts file and read line by line, send modified result to output.
+$fpPosts = fopen('./posts.txt', 'r');
+while(!feof($fpPosts))
 {
-   header('Location: ' . $url, true, $statusCode);
-   die();
+    $line = fgets($fpPosts, 4096);
+    $result = explode($deli, $line);
+    
+    $post_month = date("M", (int)$result[0]);
+    $post_day = date("d", (int)$result[0]);
+    $current_month = date("M");
+    $current_day = date("d");
+    
+    if($current_month===$post_month)
+    {
+        if($current_day===$post_day)
+        {
+            $time = date("H:i", (int)$result[0]);
+        }
+        else
+        {
+            $time = date("M d\r\nH:i\r\nD", (int)$result[0]);
+        }
+    }
+    else
+    {
+        $time = date("M d\r\nH:i\r\nD", (int)$result[0]);
+    }
+    
+    $posts = "<div class=post><div class=time>$time</div><div class=msg>".$result[1]."</div></div>";
+    echo nl2br($posts);
 }
+fclose($fpPosts);
+
 
 ?>
 </div>
